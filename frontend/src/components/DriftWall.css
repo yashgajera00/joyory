@@ -1,0 +1,143 @@
+.drift-wall-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Organic perimeter vignette that gently fades the 4 corners and borders into the main page background */
+.drift-wall-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 75% 72% at 50% 50%,
+    transparent 30%,
+    rgba(252, 251, 249, 0.4) 60%,
+    rgba(252, 251, 249, 0.85) 84%,
+    var(--bg-main, #fcfbf9) 100%
+  );
+  z-index: 6;
+}
+
+.drift-wall {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  perspective: var(--dw-perspective, 1200px);
+  perspective-origin: 50% 50%;
+  --dw-tile-w: 200px;
+  --dw-tile-h: 132px;
+  --dw-gap: 18px;
+  --dw-radius: 14px;
+  --dw-lift: 64px;
+  --dw-dim: 0.55;
+  --dw-gray: 0;
+  --dw-overlay: #ffffff;
+  --dw-edge: 40%;
+  -webkit-mask-image:
+    radial-gradient(ellipse 74% 72% at 50% 50%, #000 24%, rgba(0, 0, 0, 0.88) 52%, rgba(0, 0, 0, 0.28) 78%, transparent 100%);
+  mask-image:
+    radial-gradient(ellipse 74% 72% at 50% 50%, #000 24%, rgba(0, 0, 0, 0.88) 52%, rgba(0, 0, 0, 0.28) 78%, transparent 100%);
+}
+
+.drift-wall__plane {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: row;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.drift-wall__col {
+  position: relative;
+  width: calc(var(--dw-tile-w) + var(--dw-gap));
+  transform-style: preserve-3d;
+}
+
+.drift-wall__track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+.drift-wall__tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: calc(var(--dw-tile-h) + var(--dw-gap));
+  flex: 0 0 auto;
+  outline: none;
+  transform-style: preserve-3d;
+}
+
+.drift-wall__inner {
+  position: absolute;
+  inset: calc(var(--dw-gap) / 2);
+  display: block;
+  border-radius: var(--dw-radius);
+  overflow: hidden;
+  background: #ffffff;
+  opacity: var(--dw-dim);
+  transform: translateZ(0);
+  pointer-events: none;
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drift-wall__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(1.02) contrast(0.97) saturate(0.92);
+  transition: filter 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Subtle white translucent glaze/coat over image */
+.drift-wall__overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--dw-overlay, #ffffff);
+  opacity: 0.26;
+  pointer-events: none;
+  transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hover/active state: White coat disappears, showing clear, crisp image in 3D lift */
+.drift-wall__tile.is-active .drift-wall__inner,
+.drift-wall__tile:focus-visible .drift-wall__inner {
+  opacity: 1;
+  transform: translateZ(var(--dw-lift));
+  box-shadow:
+    0 24px 50px -14px rgba(24, 24, 27, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.95) inset;
+}
+
+.drift-wall__tile.is-active img,
+.drift-wall__tile:focus-visible img {
+  filter: brightness(1) contrast(1.04) saturate(1.06);
+}
+
+.drift-wall__tile.is-active .drift-wall__overlay,
+.drift-wall__tile:focus-visible .drift-wall__overlay {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drift-wall__plane,
+  .drift-wall__track {
+    will-change: auto;
+  }
+}
