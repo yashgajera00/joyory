@@ -14,23 +14,32 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv(Path(__file__).resolve().parent.parent / '.env', override=True)
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file if present
+load_dotenv(BASE_DIR / '.env', override=True)
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-)xtj)v098u63c@+_@e^_f7u=m6x#&vfo7^u(v0@*6n+q-r1gn2"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-)xtj)v098u63c@+_@e^_f7u=m6x#&vfo7^u(v0@*6n+q-r1gn2"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+# ALLOWED_HOSTS: localhost and 127.0.0.1 locally, joyory.pythonanywhere.com in production
+allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "")
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
 
 
 # Application definition
@@ -46,6 +55,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+    "django_filters",
     # Local apps
     "api",
     "products",
@@ -131,7 +141,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Preserve existing source static files directory
+STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -149,28 +163,54 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS Settings
+# CORS & CSRF Settings
 from corsheaders.defaults import default_headers
 
-CORS_ALLOWED_ORIGINS = [
+DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "https://joyory-shopping.vercel.app",
 ]
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:\d+$",
-    r"^http://127\.0\.0\.1:\d+$",
-]
+cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if cors_env:
+    env_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()]
+    CORS_ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_CORS_ORIGINS + env_origins))
+else:
+    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ORIGINS
+
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+else:
+    CORS_ALLOWED_ORIGIN_REGEXES = []
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-session-id",
 ]
+
+def _ensure_scheme(origin):
+    origin = origin.strip()
+    if origin and not (origin.startswith("http://") or origin.startswith("https://")):
+        return f"https://{origin}"
+    return origin
+
+# CSRF Trusted Origins (required for POST/PUT/DELETE from cross-origin frontend in production)
+csrf_env = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if csrf_env:
+    env_csrf = [_ensure_scheme(origin) for origin in csrf_env.split(",") if origin.strip()]
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CORS_ALLOWED_ORIGINS + env_csrf))
+else:
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CORS_ALLOWED_ORIGINS))
+
 
 # Gemini Vision API — loaded from .env, NEVER exposed to frontend
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')

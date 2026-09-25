@@ -3,7 +3,14 @@
  * Manages persistent guest session ID in localStorage and communicates with Django REST Framework backend.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Cleanly resolve API base URL:
+// - Default (local dev): '/api' (proxied by Vite to http://127.0.0.1:8000/api)
+// - Production (Vercel): VITE_API_BASE_URL (e.g. 'https://joyory.pythonanywhere.com/api' or 'https://joyory.pythonanywhere.com')
+const rawBase = (import.meta.env.VITE_API_BASE_URL || '/api').trim().replace(/\/+$/, '');
+export const API_BASE_URL = (rawBase && !rawBase.endsWith('/api') && rawBase !== '/api')
+  ? `${rawBase}/api`
+  : rawBase;
+
 
 /**
  * Retrieves or initializes a unique session UUID for guest cart & routine persistence.
@@ -29,7 +36,8 @@ export function resetSessionId() {
  * Core HTTP request helper with unified headers and error formatting.
  */
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE_URL}${cleanEndpoint}`;
   const token = localStorage.getItem('joyory_auth_token');
   const headers = {
     'X-Session-ID': getSessionId(),

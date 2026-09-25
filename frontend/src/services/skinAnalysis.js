@@ -4,9 +4,9 @@
  * The Ivy AI API key NEVER appears here — it stays on the Django server.
  */
 
-import { getSessionId } from './api';
+import { getSessionId, API_BASE_URL } from './api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
 
 /**
  * Sends a captured image Blob to the Django skin analysis endpoint.

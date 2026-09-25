@@ -10,5 +10,6 @@ ENV/
 media/
 *.log
 .env
+staticfiles/
 .idea/
 .vscode/
