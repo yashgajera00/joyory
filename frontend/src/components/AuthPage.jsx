@@ -291,18 +291,6 @@ export default function AuthPage({
               <span>{loading ? 'Signing In...' : 'Sign In'}</span>
               <ArrowRightIcon size={18} />
             </button>
-
-            {/* Quick Demo Fill Helper */}
-            <div className="auth-demo-box">
-              <span className="auth-demo-label">Testing Demo Account:</span>
-              <button
-                type="button"
-                className="auth-demo-btn"
-                onClick={handleFillDemo}
-              >
-                Auto-fill demo user (Aria Vance)
-              </button>
-            </div>
           </form>
         ) : (
           /* ─────────────── FORM: REGISTER ─────────────────────────── */

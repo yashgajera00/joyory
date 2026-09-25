@@ -1,7 +1,7 @@
 """
 Skin Analysis Product Recommender
 ===================================
-Matches the Ivy AI skin profile against Joyory's existing product database
+Matches the Gemini skin profile against Joyory's existing product database
 using ingredient signals, skin_types, and concerns fields.
 
 No external products — only products already in the Joyory DB are returned.
@@ -76,7 +76,7 @@ def _normalise_level(value: str) -> str:
 
 def _extract_concerns(analysis: dict) -> list:
     """
-    Convert the Ivy AI analysis dict into a prioritised list of skin concerns
+    Convert the Gemini analysis dict into a prioritised list of skin concerns
     that will drive ingredient matching.
     """
     concerns = []
@@ -124,7 +124,7 @@ def _extract_concerns(analysis: dict) -> list:
 
 def recommend_products(analysis: dict, max_results: int = 5) -> list:
     """
-    Given the Ivy AI analysis dict, query the Joyory product database
+    Given the Gemini analysis dict, query the Joyory product database
     and return the top `max_results` most relevant products with reasons.
 
     Returns list of dicts:

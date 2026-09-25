@@ -141,3 +141,52 @@
     will-change: auto;
   }
 }
+
+/* Floating product badge on hover/active */
+.drift-wall__badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.drift-wall__tile.is-active .drift-wall__badge,
+.drift-wall__tile:focus-visible .drift-wall__badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.drift-wall__badge-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.drift-wall__badge-price {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0f766e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+

@@ -15,7 +15,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv(Path(__file__).resolve().parent.parent / '.env')
+load_dotenv(Path(__file__).resolve().parent.parent / '.env', override=True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -172,6 +172,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-session-id",
 ]
 
-# Ivy AI Facial Scan API — loaded from .env, NEVER exposed to frontend
-IVY_AI_API_KEY = os.environ.get('IVY_AI_API_KEY', '')
-IVY_AI_ENDPOINT = 'https://facial-scan.aihealthpred.com/v1/scan/analyze'
+# Gemini Vision API — loaded from .env, NEVER exposed to frontend
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_MODEL_NAME = os.environ.get('GEMINI_MODEL_NAME', 'gemini-3.6-flash')
+GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'

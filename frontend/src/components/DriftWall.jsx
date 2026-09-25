@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './DriftWall.css';
 
-const DEFAULT_ITEMS = Array.from({ length: 15 }, (_, i) => {
-  const ids = [1015, 1025, 1039, 1043, 1044, 1050, 1062, 1069, 1074, 1080, 1084, 106, 110, 133, 164];
-  return {
-    image: `https://picsum.photos/id/${ids[i % ids.length]}/600/400`,
-    title: `Tile ${i + 1}`,
-    href: undefined
-  };
-});
+const DEFAULT_ITEMS = Array.from({ length: 65 }, (_, i) => ({
+  id: i + 1,
+  productId: i + 1,
+  image: `/images/products/product_${i + 1}.jpg`,
+  title: `Joyory Formula #${i + 1}`,
+  href: undefined
+}));
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,7 +40,8 @@ const DriftWall = ({
   grayscale = false,
   overlayColor = 'transparent',
   className = '',
-  style
+  style,
+  onItemClick
 }) => {
   const containerRef = useRef(null);
   const planeRef = useRef(null);
@@ -227,16 +227,42 @@ const DriftWall = ({
   const renderTile = (item, id, colIndex) => {
     const inner = (
       <span className="drift-wall__inner">
-        <img src={item.image} alt={item.title ?? ''} loading="lazy" decoding="async" draggable={false} />
+        <img
+          src={item.image}
+          alt={item.title ?? 'Joyory Product'}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onError={(e) => {
+            const fallback = '/images/products/product_1.jpg';
+            if (!e.target.src.endsWith('product_1.jpg')) {
+              e.target.src = fallback;
+            }
+          }}
+        />
         <span className="drift-wall__overlay" aria-hidden="true" />
+        {item.title && (
+          <span className="drift-wall__badge">
+            <span className="drift-wall__badge-title">{item.title}</span>
+            {item.price && <span className="drift-wall__badge-price">{item.price}</span>}
+          </span>
+        )}
       </span>
     );
+    const handleClick = (e) => {
+      if (item.onClick) {
+        item.onClick(item, e);
+      } else if (onItemClick) {
+        onItemClick(item, e);
+      }
+    };
     const commonProps = {
       className: `drift-wall__tile${activeId === id ? ' is-active' : ''}`,
       'data-tile-id': id,
       'data-col': colIndex,
       onFocus: () => activate(id, colIndex),
-      onBlur: release
+      onBlur: release,
+      onClick: handleClick
     };
     if (item.href) {
       return (

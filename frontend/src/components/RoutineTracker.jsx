@@ -88,12 +88,34 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
   });
   const [selectedCity, setSelectedCity] = useState('Mumbai');
   const [selectedWeek, setSelectedWeek] = useState(null);
+  const [userCoords, setUserCoords] = useState({ latitude: null, longitude: null });
+
+  const detectLiveWeather = () => {
+    if (!navigator.geolocation) {
+      setUserCoords({ latitude: null, longitude: null });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      () => {
+        setUserCoords({ latitude: null, longitude: null });
+      },
+      { timeout: 5000, enableHighAccuracy: true }
+    );
+  };
 
   const loadProgress = async (
     overrideTime = timeOfDay,
     overrideCity = selectedCity,
     overrideWeek = selectedWeek,
-    overrideDateOffset = selectedDateOffset
+    overrideDateOffset = selectedDateOffset,
+    overrideCoords = userCoords
   ) => {
     if (!routineId) return;
     setLoading(true);
@@ -102,6 +124,8 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
       const params = {
         time_of_day: overrideTime,
         city: overrideCity,
+        latitude: overrideCoords?.latitude ?? null,
+        longitude: overrideCoords?.longitude ?? null,
         client_hour: new Date().getHours()
       };
 
@@ -126,8 +150,12 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
   };
 
   useEffect(() => {
-    loadProgress(timeOfDay, selectedCity, selectedWeek, selectedDateOffset);
-  }, [routineId, timeOfDay, selectedCity, selectedWeek, selectedDateOffset]);
+    detectLiveWeather();
+  }, [routineId]);
+
+  useEffect(() => {
+    loadProgress(timeOfDay, selectedCity, selectedWeek, selectedDateOffset, userCoords);
+  }, [routineId, timeOfDay, selectedCity, selectedWeek, selectedDateOffset, userCoords.latitude, userCoords.longitude]);
 
   // Automatically detect calendar date change (e.g. past midnight) to refresh tasks
   useEffect(() => {
@@ -136,11 +164,11 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
       const currentDateStr = new Date().toDateString();
       if (currentDateStr !== lastDateStr) {
         lastDateStr = currentDateStr;
-        loadProgress(timeOfDay, selectedCity, selectedWeek, selectedDateOffset);
+        loadProgress(timeOfDay, selectedCity, selectedWeek, selectedDateOffset, userCoords);
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [routineId, timeOfDay, selectedCity, selectedWeek, selectedDateOffset]);
+  }, [routineId, timeOfDay, selectedCity, selectedWeek, selectedDateOffset, userCoords]);
 
   // Handle Delete Step from Routine
   const handleDeleteStep = async (stepId, productName) => {
@@ -420,39 +448,6 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
             </div>
           </div>
 
-          <div className="env-actions-block">
-            <div className="city-pill-wrapper">
-              <span className="city-label">📍 City:</span>
-              <select
-                className="city-select-dropdown"
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-              >
-                {INDIAN_CITIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="am-pm-toggle-wrap">
-              <button
-                type="button"
-                className={`time-toggle-btn ${timeOfDay === 'morning' ? 'active' : ''}`}
-                onClick={() => setTimeOfDay('morning')}
-              >
-                <SunIcon size={14} />
-                <span>Morning</span>
-              </button>
-              <button
-                type="button"
-                className={`time-toggle-btn ${timeOfDay === 'evening' ? 'active' : ''}`}
-                onClick={() => setTimeOfDay('evening')}
-              >
-                <MoonIcon size={14} />
-                <span>Evening</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Environmental Metrics Trio */}
@@ -507,16 +502,6 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
             {adaptiveGuidance.recommendation && (
               <span className="guidance-tip">💡 Recommendation: {adaptiveGuidance.recommendation}</span>
             )}
-          </div>
-        </div>
-      )}
-
-      {adaptiveGuidance && !adaptiveGuidance.has_warning && adaptiveGuidance.status === 'optimal' && (
-        <div className="adaptive-guidance-card success">
-          <ShieldCheckIcon size={18} className="guidance-icon text-emerald" />
-          <div className="guidance-content">
-            <h4 className="guidance-title">{adaptiveGuidance.title}</h4>
-            <p className="guidance-message">{adaptiveGuidance.message}</p>
           </div>
         </div>
       )}
@@ -587,122 +572,6 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
           </div>
         </div>
 
-      </div>
-
-      {/* 5. DAILY SKIN FEEDBACK (Lightweight 1-Click Interaction) */}
-      <div className="daily-skin-feedback-card">
-        <div className="feedback-card-header">
-          <div className="feedback-title-box">
-            <SparklesIcon size={18} />
-            <h3>How did your skin feel today?</h3>
-          </div>
-          <span className="feedback-subtext">
-            1-click daily feedback tunes your routine's progressive pace.
-          </span>
-        </div>
-
-        <div className="feedback-options-row">
-          <button
-            type="button"
-            className={`feedback-choice-btn ${todaySkinFeel === 'comfortable' ? 'selected' : ''}`}
-            onClick={() => handleSkinFeedback('comfortable')}
-            disabled={submittingFeedback}
-          >
-            <span className="feedback-emoji">😊</span>
-            <span className="feedback-label">Comfortable</span>
-          </button>
-
-          <button
-            type="button"
-            className={`feedback-choice-btn ${todaySkinFeel === 'dry' ? 'selected' : ''}`}
-            onClick={() => handleSkinFeedback('dry')}
-            disabled={submittingFeedback}
-          >
-            <span className="feedback-emoji">😐</span>
-            <span className="feedback-label">A little dry</span>
-          </button>
-
-          <button
-            type="button"
-            className={`feedback-choice-btn ${todaySkinFeel === 'irritated' ? 'selected' : ''}`}
-            onClick={() => handleSkinFeedback('irritated')}
-            disabled={submittingFeedback}
-          >
-            <span className="feedback-emoji">😣</span>
-            <span className="feedback-label">Irritated</span>
-          </button>
-        </div>
-
-        {feedbackSuccess && (
-          <div className="feedback-saved-toast">
-            <CheckCircleIcon size={14} />
-            <span>Tolerance feedback logged! Your routine timeline is adapting.</span>
-          </div>
-        )}
-      </div>
-
-      {/* 6. AUTO-REORDER STATUS & TEST CONTROLS */}
-      <div className="tracker-footer-card">
-        <div className="auto-reorder-flex-row">
-          <div className="auto-reorder-info">
-            <h4 className="footer-card-heading">
-              Automatic Replenishment on Routine Completion
-            </h4>
-            <p className="footer-card-sub">
-              {autoReorderOn
-                ? "When your multi-week routine reaches 100%, Joyory automatically schedules delivery refills."
-                : "Automatic replenishment is currently off. You can toggle this setting anytime."}
-            </p>
-          </div>
-
-          <div className="auto-reorder-actions">
-            <span className={`setting-pill ${autoReorderOn ? 'on' : 'off'}`}>
-              {autoReorderOn ? 'AUTO-REORDER: ON' : 'AUTO-REORDER: OFF'}
-            </span>
-            <button
-              type="button"
-              className="btn-toggle-reorder"
-              onClick={handleToggleAutoReorder}
-              disabled={togglingReorder}
-            >
-              {togglingReorder ? 'Updating...' : (autoReorderOn ? 'Turn Off' : 'Turn On')}
-            </button>
-          </div>
-        </div>
-
-        {/* Auto-reordered confirmation banner */}
-        {autoReordered && (
-          <div className="auto-reordered-success-strip">
-            <ShieldCheckIcon size={18} />
-            <span>
-              🎉 Refill Order #{progressData?.auto_reorder_order_id} automatically confirmed upon completion!
-            </span>
-            <button
-              type="button"
-              className="btn-link-white"
-              onClick={onGoToDelivery}
-            >
-              View Tracking &rarr;
-            </button>
-          </div>
-        )}
-
-        {/* Instant Routine Completion Test Button */}
-        {!isCompleted && (
-          <div className="test-action-bar">
-            <span className="test-desc-text">Demonstration Helper:</span>
-            <button
-              type="button"
-              className="btn-complete-all-test"
-              onClick={handleCompleteAll}
-              disabled={completingAll}
-              title="Instantly mark all steps across all 3 stages complete to evaluate auto-reorder trigger"
-            >
-              <CheckCircleIcon size={14} />
-              <span>{completingAll ? 'Completing...' : 'Complete All Steps (Test Auto-Reorder)'}</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Skin Tolerance Feedback Modal */}

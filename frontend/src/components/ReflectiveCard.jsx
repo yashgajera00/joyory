@@ -223,7 +223,7 @@ const ReflectiveCard = ({
       }
     } catch (err) {
       clearTimeout(longWaitTimerRef.current);
-      setErrorMsg(err.message || 'We couldn\'t analyze your photo right now.');
+      setErrorMsg('Face not recognized. Please try again.');
       setUiState('error');
     }
   }, [onAnalysisComplete, user]); // eslint-disable-line react-hooks/exhaustive-deps

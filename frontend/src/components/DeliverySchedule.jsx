@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRoutineDeliverySchedule, toggleDeliveryItemAutoReorder } from '../services/api';
-import { CalendarIcon, RefreshCwIcon, CheckCircleIcon, ShieldCheckIcon, SparklesIcon } from './Icons';
+import { CalendarIcon, ShieldCheckIcon, SparklesIcon } from './Icons';
 import { formatRupees } from '@/lib/utils';
 
-export default function DeliverySchedule({ routineId, onGoToTimeline, onGoToTracker }) {
+export default function DeliverySchedule({ routineId }) {
   const [scheduleData, setScheduleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -93,19 +93,7 @@ export default function DeliverySchedule({ routineId, onGoToTimeline, onGoToTrac
           Never run out of essential formulas. Reorder dates are dynamically calculated from bottle milliliters, drop dosage, and prescribed weekly frequency.
         </p>
 
-        <div className="routine-quick-nav">
-          <button className="btn-tab-action" onClick={onGoToTimeline}>
-            <CalendarIcon size={16} />
-            <span>Progressive Timeline</span>
-          </button>
-          <button className="btn-tab-action" onClick={onGoToTracker}>
-            <CheckCircleIcon size={16} />
-            <span>Daily Micro-Tracker</span>
-          </button>
-          <button className="btn-refresh-icon" onClick={loadSchedule} title="Refresh schedule">
-            <RefreshCwIcon size={16} />
-          </button>
-        </div>
+        <div className="routine-quick-nav" />
       </div>
 
       <div className="schedule-items-card">

@@ -58,12 +58,16 @@ export default function Cart({
                   <div key={item.id} className="cart-item-row">
                     <div className="item-visual-thumb">
                       <img
-                        src={item.product.image_url || `/images/products/${item.product.category}.jpg`}
+                        src={item.product.image_url || `/images/products/product_${item.product.id}.jpg`}
                         alt={item.product.name}
                         className="cart-thumb-img"
                         onError={(e) => {
-                          if (!e.target.src.endsWith(`${item.product.category}.jpg`)) {
-                            e.target.src = `/images/products/${item.product.category}.jpg`;
+                          const prodFallback = `/images/products/product_${item.product.id}.jpg`;
+                          const catFallback = `/images/products/${item.product.category}.jpg`;
+                          if (e.target.src.indexOf(`product_${item.product.id}.jpg`) === -1) {
+                            e.target.src = prodFallback;
+                          } else if (e.target.src.indexOf(`${item.product.category}.jpg`) === -1) {
+                            e.target.src = catFallback;
                           }
                         }}
                       />

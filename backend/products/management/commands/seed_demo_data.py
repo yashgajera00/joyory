@@ -1178,20 +1178,14 @@ class Command(BaseCommand):
             raw_price = p_data["price"]
             if raw_price in PRICE_MAP:
                 p_data["price"] = PRICE_MAP[raw_price]
-            # Set realistic luxury product image URL
-            name_lower = p_data["name"].lower()
-            if "vitamin c" in name_lower:
-                p_data["image_url"] = "/images/products/vitamin_c.jpg"
-            elif "retinol" in name_lower:
-                p_data["image_url"] = "/images/products/retinol.jpg"
-            else:
-                p_data["image_url"] = f"/images/products/{p_data['category']}.jpg"
+            count += 1
+            # Set dedicated unique luxury product image URL
+            p_data["image_url"] = f"/images/products/product_{count}.jpg"
 
             prod, created = Product.objects.update_or_create(
                 name=p_data["name"],
                 defaults=p_data
             )
             prod.ingredients.set([ing_objs[n] for n in ing_names if n in ing_objs])
-            count += 1
 
         self.stdout.write(self.style.SUCCESS(f"Successfully seeded {count} Joyory products into db.sqlite3!"))

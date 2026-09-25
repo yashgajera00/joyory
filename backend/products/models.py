@@ -130,11 +130,8 @@ class Product(models.Model):
     def effective_image_url(self):
         if self.image_url:
             return self.image_url
-        name_lower = self.name.lower()
-        if 'vitamin c' in name_lower:
-            return '/images/products/vitamin_c.jpg'
-        if 'retinol' in name_lower:
-            return '/images/products/retinol.jpg'
+        if self.id:
+            return f'/images/products/product_{self.id}.jpg'
         return f'/images/products/{self.category}.jpg'
 
     def __str__(self):

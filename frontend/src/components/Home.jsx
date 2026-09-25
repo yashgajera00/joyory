@@ -1,16 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SparklesIcon, ArrowRightIcon, BagIcon } from './Icons';
 import { GridPulse } from '@/components/ui/grid-pulse';
-import GridPulseDemo from '@/components/ui/demo';
 import ReflectiveCard from './ReflectiveCard';
 import DriftWall from './DriftWall';
 import { formatRupees } from '@/lib/utils';
+import { ALL_PRODUCTS } from '@/lib/productsData';
+import { fetchProducts } from '../services/api';
 
-const items = [
-  { image: 'https://picsum.photos/id/1015/600/400', title: 'Peaks', href: 'https://example.com/one' },
-  { image: 'https://picsum.photos/id/1025/600/400', title: 'Pup', href: 'https://example.com/two' },
-  { image: 'https://picsum.photos/id/1039/600/400', title: 'Falls', href: 'https://example.com/three' },
-];
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 
 function RecommendedProductCard({ rec, onSelectProduct, onAddToCart }) {
@@ -94,7 +98,7 @@ const DEFAULT_RECOMMENDATIONS = [
     category: 'Cleanser',
     category_slug: 'cleanser',
     price: '649.00',
-    image_url: '/images/products/cleanser.jpg',
+    image_url: '/images/products/product_13.jpg',
     brand: 'Joyory',
     reason: 'Formulated with Salicylic Acid to clear congested pores and regulate excess sebum.',
   },
@@ -104,7 +108,7 @@ const DEFAULT_RECOMMENDATIONS = [
     category: 'Serum',
     category_slug: 'serum',
     price: '899.00',
-    image_url: '/images/products/serum.jpg',
+    image_url: '/images/products/product_32.jpg',
     brand: 'Joyory',
     reason: 'Multi-functional brightening booster that targets skin texture and redness.',
   },
@@ -114,7 +118,7 @@ const DEFAULT_RECOMMENDATIONS = [
     category: 'Moisturizer',
     category_slug: 'moisturizer',
     price: '949.00',
-    image_url: '/images/products/moisturizer.jpg',
+    image_url: '/images/products/product_46.jpg',
     brand: 'Joyory',
     reason: 'Lightweight, rapid-absorption barrier hydration without pore-clogging lipids.',
   },
@@ -124,14 +128,48 @@ const DEFAULT_RECOMMENDATIONS = [
     category: 'Exfoliant',
     category_slug: 'exfoliant',
     price: '999.00',
-    image_url: '/images/products/exfoliant.jpg',
+    image_url: '/images/products/product_42.jpg',
     brand: 'Joyory',
     reason: 'Dual-action chemical resurfacing treatment for radiant, glass-skin texture.',
   },
 ];
 
 export default function Home({ user, onGoToShop, onSelectProduct, onAddToCart }) {
-  const [showStandaloneDemo, setShowStandaloneDemo] = useState(false);
+
+  // Wall items state initialized with randomly shuffled Joyory products (guarantees unique products per column)
+  const [wallItems, setWallItems] = useState(() => {
+    const initial = ALL_PRODUCTS.map((p) => ({
+      id: p.id,
+      productId: p.id,
+      image: p.image_url || `/images/products/product_${p.id}.jpg`,
+      title: p.name,
+      price: formatRupees(p.price),
+      category: p.category,
+    }));
+    return shuffleArray(initial);
+  });
+
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.results || []);
+        if (list.length > 0) {
+          const formatted = list.map((p) => ({
+            id: p.id,
+            productId: p.id,
+            image: p.image_url || `/images/products/product_${p.id}.jpg`,
+            title: p.name,
+            price: formatRupees(p.price),
+            category: p.category,
+          }));
+          setWallItems(shuffleArray(formatted));
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch products for DriftWall, using local catalog:', err);
+      });
+  }, []);
+
 
   const getSkinStorageKey = (u) => (u ? `joyory_skin_analysis_${u.id || u.username}` : 'joyory_skin_analysis_guest');
 
@@ -196,39 +234,8 @@ export default function Home({ user, onGoToShop, onSelectProduct, onAddToCart })
 
   return (
     <div className="home-container">
-      {/* Optional Standalone GridPulse Demo Toggle */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '-40px', zIndex: 10 }}>
-        <button
-          type="button"
-          onClick={() => setShowStandaloneDemo(!showStandaloneDemo)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 14px',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            borderRadius: '9999px',
-            border: '1px solid var(--border-subtle)',
-            backgroundColor: showStandaloneDemo ? 'var(--brand-black)' : '#ffffff',
-            color: showStandaloneDemo ? '#ffffff' : 'var(--text-secondary)',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <SparklesIcon size={14} />
-          <span>{showStandaloneDemo ? 'View Joyory Hero' : 'Preview Fullscreen GridPulse Demo'}</span>
-        </button>
-      </div>
-
-      {showStandaloneDemo ? (
-        <div style={{ borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
-          <GridPulseDemo />
-        </div>
-      ) : (
-        /* Editorial Luxury Hero with Reactive GridPulse Background */
-        <section className="hero-section">
+      {/* Editorial Luxury Hero with Reactive GridPulse Background */}
+      <section className="hero-section">
           <GridPulse cell={24} reach={2.8} ambient={2} avoid="[data-grid-avoid]" />
           <div className="hero-content">
             <div className="hero-tag" data-grid-avoid>
@@ -273,9 +280,8 @@ export default function Home({ user, onGoToShop, onSelectProduct, onAddToCart })
             />
           </div>
         </section>
-      )}
 
-      {/* DriftWall 3D Floating Effect Area */}
+      {/* DriftWall 3D Floating Effect Area with Real Product Photos */}
       <div
         className="drift-wall-wrapper"
         style={{
@@ -287,8 +293,9 @@ export default function Home({ user, onGoToShop, onSelectProduct, onAddToCart })
           background: 'var(--bg-main, #fcfbf9)',
         }}
       >
+
         <DriftWall
-          items={items}
+          items={wallItems}
           columns={5}
           tileWidth={236}
           tileHeight={192}
@@ -309,6 +316,11 @@ export default function Home({ user, onGoToShop, onSelectProduct, onAddToCart })
           roll={7}
           pauseOnHover={false}
           grayscale={false}
+          onItemClick={(item) => {
+            if (item.productId && onSelectProduct) {
+              onSelectProduct(item.productId);
+            }
+          }}
         />
       </div>
 

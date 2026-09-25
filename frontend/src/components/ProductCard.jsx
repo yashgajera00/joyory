@@ -27,13 +27,17 @@ export default function ProductCard({ product, onSelectProduct, onAddToCart, sho
       {/* Product Image */}
       <div className="product-visual-box">
         <img
-          src={product.image_url || `/images/products/${product.category}.jpg`}
+          src={product.image_url || `/images/products/product_${product.id}.jpg`}
           alt={product.name}
           className="product-card-img"
           loading="lazy"
           onError={(e) => {
-            if (!e.target.src.endsWith(`${product.category}.jpg`)) {
-              e.target.src = `/images/products/${product.category}.jpg`;
+            const prodFallback = `/images/products/product_${product.id}.jpg`;
+            const catFallback = `/images/products/${product.category}.jpg`;
+            if (e.target.src.indexOf(`product_${product.id}.jpg`) === -1) {
+              e.target.src = prodFallback;
+            } else if (e.target.src.indexOf(`${product.category}.jpg`) === -1) {
+              e.target.src = catFallback;
             }
           }}
         />

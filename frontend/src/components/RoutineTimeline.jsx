@@ -154,15 +154,6 @@ export default function RoutineTimeline({ routineData: initialRoutineData, routi
           </div>
         )}
 
-        {adaptiveGuidance && !adaptiveGuidance.has_warning && adaptiveGuidance.status === 'optimal' && (
-          <div className="adaptive-guidance-banner success">
-            <ShieldCheckIcon size={18} className="banner-icon" />
-            <div>
-              <strong>{adaptiveGuidance.title}</strong>
-              <p>{adaptiveGuidance.message}</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 2. PROGRESSIVE STAGES (Stage 1, Stage 2, Stage 3) */}
