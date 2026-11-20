@@ -386,7 +386,7 @@ export default function App() {
           <div className="footer-brand-column">
             <span className="footer-logo">JOYORY</span>
             <p className="footer-tagline">
-              Smart Shopping Experience &bull; Hackathon Task 02
+              Smart Shopping Experience
             </p>
             <p className="footer-copy">
               Decoupled architecture with Django REST Framework & React 19. Formulated for epidermal synergy.

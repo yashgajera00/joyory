@@ -411,9 +411,6 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
             <div className="greeting-eyebrow">
               <SparklesIcon size={14} />
               <span>Today's Action Plan</span>
-              <span className="hero-stage-tag">
-                {progressData?.current_week_text || `Week ${progressData?.current_week || 1} of 6`} &bull; Stage {progressData?.current_stage || 1}
-              </span>
             </div>
             <h1 className="greeting-title">
               {getTimeBasedGreeting()}
