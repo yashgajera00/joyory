@@ -1,5 +1,5 @@
 import React from 'react';
-import { BagIcon, CalendarIcon, CheckCircleIcon, RefreshCwIcon, UserIcon, LogOutIcon } from './Icons';
+import { BagIcon, CheckCircleIcon, RefreshCwIcon, UserIcon, LogOutIcon } from './Icons';
 
 export default function Header({ currentView, setCurrentView, cartItemCount = 0, user, onLogout }) {
   return (
@@ -24,19 +24,6 @@ export default function Header({ currentView, setCurrentView, cartItemCount = 0,
             onClick={() => setCurrentView('products')}
           >
             Catalog
-          </button>
-          <button
-            className={`nav-link ${currentView === 'routine' ? 'active' : ''}`}
-            onClick={() => {
-              if (!user) {
-                setCurrentView('auth');
-              } else {
-                setCurrentView('routine');
-              }
-            }}
-          >
-            <CalendarIcon size={16} className="inline-icon" />
-            Routine Timeline
           </button>
           <button
             className={`nav-link ${currentView === 'tracker' ? 'active' : ''}`}

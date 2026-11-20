@@ -11,7 +11,6 @@ import {
   CheckCircleIcon, 
   CalendarIcon, 
   SparklesIcon, 
-  RefreshCwIcon, 
   ShieldCheckIcon,
   SunIcon,
   MoonIcon,
@@ -342,77 +341,6 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
               )}
             </p>
 
-          </div>
-
-          <div className="hero-controls-group">
-            {/* Day Switcher: Today vs Tomorrow (Date Change Test) */}
-            <div className="week-sim-pills" title="Simulate Date Change / Tomorrow Reset">
-              <span className="sim-label">Day:</span>
-              <button
-                type="button"
-                className={`sim-btn ${selectedDateOffset === 0 ? 'active' : ''}`}
-                onClick={() => setSelectedDateOffset(0)}
-                title="View Today"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                className={`sim-btn ${selectedDateOffset === 1 ? 'active' : ''}`}
-                onClick={() => setSelectedDateOffset(1)}
-                title="View Tomorrow (Automatic Day Change Reset)"
-              >
-                Tomorrow (+1d)
-              </button>
-            </div>
-
-            {/* Simulation / Milestone Testing Switcher */}
-            <div className="week-sim-pills" title="Filter Daily Tracker by Routine Milestone">
-              <span className="sim-label">Milestone:</span>
-              <button
-                type="button"
-                className={`sim-btn ${selectedWeek === null ? 'active' : ''}`}
-                onClick={() => setSelectedWeek(null)}
-                title="Real-time date"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                className={`sim-btn ${selectedWeek === 1 ? 'active' : ''}`}
-                onClick={() => setSelectedWeek(1)}
-                title="Week 1: Barrier Foundation"
-              >
-                Week 1
-              </button>
-              <button
-                type="button"
-                className={`sim-btn ${selectedWeek === 3 ? 'active' : ''}`}
-                onClick={() => setSelectedWeek(3)}
-                title="Week 3: Targeted Prep & Hydration"
-              >
-                Week 3
-              </button>
-              <button
-                type="button"
-                className={`sim-btn ${selectedWeek === 4 ? 'active' : ''}`}
-                onClick={() => setSelectedWeek(4)}
-                title="Week 4: Concentrated Active Integration"
-              >
-                Week 4
-              </button>
-            </div>
-
-
-            <button
-              type="button"
-              className="btn-refresh-pill"
-              onClick={() => loadProgress()}
-              title="Refresh routine status"
-            >
-              <RefreshCwIcon size={14} />
-              <span>Refresh</span>
-            </button>
           </div>
         </div>
 
