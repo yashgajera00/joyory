@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  fetchRoutineProgress, 
-  completeRoutineStep, 
-  toggleRoutineAutoReorder, 
+import {
+  fetchRoutineProgress,
+  completeRoutineStep,
+  toggleRoutineAutoReorder,
   completeAllRoutineSteps,
   submitDailySkinFeedback,
   deleteRoutineStep
 } from '../services/api';
-import { 
-  CheckCircleIcon, 
-  CalendarIcon, 
-  SparklesIcon, 
+import {
+  CheckCircleIcon,
+  CalendarIcon,
+  SparklesIcon,
   ShieldCheckIcon,
   SunIcon,
   MoonIcon,
@@ -44,7 +44,7 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
   const [deletingStepId, setDeletingStepId] = useState(null);
 
   // Live Clock for accurate time-based wishing
-  const [currentTime, setCurrentTime] = useState(() => 
+  const [currentTime, setCurrentTime] = useState(() =>
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   );
 
@@ -171,7 +171,7 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
 
   // Handle Delete Step from Routine
   const handleDeleteStep = async (stepId, productName) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${productName}" from your routine timeline and daily tracker?`);
+    const confirmed = window.confirm(`Are you sure you want to delete "${productName}" from your daily tracker?`);
     if (!confirmed) return;
 
     try {

@@ -99,8 +99,8 @@ export default function CheckoutModal({
               </h2>
               <p className="checkout-modal-subtitle">
                 {loading
-                  ? 'Synchronizing formulas with your routine timeline'
-                  : 'Formulas scheduled in Routine Timeline & Daily Tracker'}
+                  ? 'Synchronizing formulas with your daily tracker'
+                  : 'Formulas scheduled in Daily Tracker'}
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function CheckoutModal({
               <div className="checkout-spinner" />
               <h3 className="checkout-processing-title">Scheduling Your Progressive Routine...</h3>
               <p className="checkout-processing-sub">
-                Encrypting active compatibility, locking in complimentary express delivery, and scheduling formulas into your timeline.
+                Encrypting active compatibility, locking in complimentary express delivery, and scheduling formulas into your daily routine.
               </p>
             </div>
           ) : (
@@ -144,7 +144,7 @@ export default function CheckoutModal({
 
                 <p className="checkout-confirmed-desc">
                   Your order has been placed successfully! All purchased formulas have been added to your{' '}
-                  <strong>Routine Timeline</strong> and <strong>Daily Tracker</strong>.
+                  <strong>Daily Tracker</strong>.
                 </p>
 
                 {/* Items Preview List */}
@@ -198,7 +198,7 @@ export default function CheckoutModal({
                     }}
                   >
                     <CalendarIcon size={18} />
-                    <span>Open Routine Timeline & Daily Tracker</span>
+                    <span>Open Daily Tracker</span>
                   </button>
 
                   <button

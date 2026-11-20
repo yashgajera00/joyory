@@ -4,7 +4,6 @@ import Home from './components/Home';
 import ProductGrid from './components/ProductGrid';
 import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
-import RoutineTimeline from './components/RoutineTimeline';
 import RoutineTracker from './components/RoutineTracker';
 import DeliverySchedule from './components/DeliverySchedule';
 import AuthPage from './components/AuthPage';
@@ -197,7 +196,7 @@ export default function App() {
     try {
       const routine = await generateRoutine(productIds, 'My Personalized Joyory Routine');
       setActiveRoutine(routine);
-      setCurrentView('routine');
+      setCurrentView('tracker');
       showToast(`Progressive routine successfully generated!`, 'success');
     } catch (err) {
       showToast(`Failed to generate routine: ${err.message}`, 'error');
@@ -291,7 +290,7 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onGoToRoutine={() => {
-              setCurrentView('routine');
+              setCurrentView('tracker');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onOrderSuccess={async (orderId, newRoutine) => {
@@ -308,42 +307,11 @@ export default function App() {
           />
         )}
 
-        {currentView === 'routine' && (
-          user ? (
-            <RoutineTimeline
-              routineData={activeRoutine}
-              routineId={activeRoutine?.routine_id || activeRoutine?.id}
-              onGoToTracker={() => setCurrentView('tracker')}
-              onGoToDelivery={() => setCurrentView('delivery')}
-              onRoutineUpdated={(updated) => setActiveRoutine(updated)}
-            />
-          ) : (
-            <AuthPage
-              user={user}
-              onAuthSuccess={handleAuthSuccess}
-              onLogoutSuccess={handleLogout}
-              onGoToShop={() => {
-                setCurrentView('products');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onGoToRoutine={() => {
-                setCurrentView('routine');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onGoToCart={() => {
-                setCurrentView('cart');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
-          )
-        )}
-
         {currentView === 'tracker' && (
           user ? (
             <RoutineTracker
               routineId={activeRoutine?.routine_id || activeRoutine?.id}
               user={user}
-              onGoToTimeline={() => setCurrentView('routine')}
               onGoToDelivery={() => setCurrentView('delivery')}
             />
 
@@ -372,7 +340,6 @@ export default function App() {
           user ? (
             <DeliverySchedule
               routineId={activeRoutine?.routine_id || activeRoutine?.id}
-              onGoToTimeline={() => setCurrentView('routine')}
               onGoToTracker={() => setCurrentView('tracker')}
             />
           ) : (
@@ -406,7 +373,7 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onGoToRoutine={() => {
-              setCurrentView('routine');
+              setCurrentView('tracker');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onGoToCart={() => {
@@ -434,12 +401,6 @@ export default function App() {
             <ul>
               <li onClick={() => setCurrentView('products')}>Smart Catalog</li>
               <li onClick={() => setCurrentView('cart')}>Conflict Engine & Climate Insight</li>
-              <li onClick={() => {
-                if (!user) setCurrentView('auth');
-                else setCurrentView('routine');
-              }}>
-                Progressive Routine Timeline
-              </li>
               <li onClick={() => {
                 if (!user) setCurrentView('auth');
                 else setCurrentView('tracker');

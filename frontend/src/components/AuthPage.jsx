@@ -153,7 +153,7 @@ export default function AuthPage({
             </button>
             {onGoToRoutine && (
               <button className="btn-profile-action btn-profile-secondary" onClick={onGoToRoutine}>
-                <span>View Routine Timeline</span>
+                <span>View Daily Tracker</span>
               </button>
             )}
             {onGoToCart && (
