@@ -16,6 +16,7 @@ from .serializers import (
 )
 from services.routine_engine import (
     generate_progressive_routine,
+    consolidate_user_active_routines,
     get_routine_adaptive_guidance,
     get_routine_staged_roadmap,
     get_active_stage_for_date,
@@ -82,14 +83,22 @@ def get_user_routine(request, routine_id, prefetch=None):
 class RoutineListView(APIView):
     """
     Lists routines for the current user or guest session.
+    Consolidates any fragmented active routines so that all orders are unified into the primary active routine.
     """
     def get(self, request):
         session_id = request.query_params.get('session_id') or request.headers.get('X-Session-ID')
-        
-        if request.user and request.user.is_authenticated:
-            routines = Routine.objects.filter(user=request.user).order_by('-created_at')
+        user = request.user if (request.user and request.user.is_authenticated) else None
+
+        consolidate_user_active_routines(user=user, session_id=session_id)
+
+        if user:
+            routines = Routine.objects.filter(user=user, status='active').order_by('-created_at')
+            if not routines.exists():
+                routines = Routine.objects.filter(user=user).order_by('-created_at')
         elif session_id:
-            routines = Routine.objects.filter(session_id=session_id, user=None).order_by('-created_at')
+            routines = Routine.objects.filter(session_id=session_id, user=None, status='active').order_by('-created_at')
+            if not routines.exists():
+                routines = Routine.objects.filter(session_id=session_id, user=None).order_by('-created_at')
         else:
             routines = Routine.objects.none()
 

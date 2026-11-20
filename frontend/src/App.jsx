@@ -61,9 +61,9 @@ export default function App() {
       setRoutineLoading(true);
       const routines = await fetchRoutines();
       if (routines && routines.length > 0) {
-        // Pick the latest routine
-        const latest = routines[routines.length - 1];
-        setActiveRoutine(latest);
+        // Pick the active routine, fallback to first
+        const active = routines.find((r) => r.status === 'active') || routines[0];
+        setActiveRoutine(active);
       } else {
         // Clear routine state if this user has no routines
         setActiveRoutine(null);
@@ -296,13 +296,9 @@ export default function App() {
             onOrderSuccess={async (orderId, newRoutine) => {
               setCart(null);
               setConflictData(null);
-              if (newRoutine) {
-                setActiveRoutine(newRoutine.routine || newRoutine);
-              } else {
-                await loadExistingRoutines();
-              }
+              await loadExistingRoutines();
               await refreshCart();
-              showToast(`Order #${orderId} confirmed! Formulas added to your Routine Timeline & Tracker.`, 'success');
+              showToast(`Order #${orderId} confirmed! Formulas added to your Daily Tracker.`, 'success');
             }}
           />
         )}

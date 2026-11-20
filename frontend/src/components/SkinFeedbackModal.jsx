@@ -12,6 +12,7 @@ export default function SkinFeedbackModal({
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
@@ -36,7 +37,7 @@ export default function SkinFeedbackModal({
         onClose();
       }, 1400);
     } catch (err) {
-      alert(`Could not record feedback: ${err.message}`);
+      setErrorMsg(`Could not record feedback: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -82,6 +83,11 @@ export default function SkinFeedbackModal({
             </div>
           ) : (
             <>
+              {errorMsg && (
+                <div style={{ background: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: '10px', fontSize: '0.88rem', marginBottom: '14px', border: '1px solid #fecaca', textAlign: 'center' }}>
+                  {errorMsg}
+                </div>
+              )}
               {taskData && (
                 <div className="feedback-task-pill">
                   <span className="pill-session-icon">

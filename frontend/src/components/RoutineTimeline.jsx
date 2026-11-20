@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarIcon, SparklesIcon, CheckCircleIcon, ArrowRightIcon, AlertTriangleIcon, ShieldCheckIcon, TrashIcon } from './Icons';
 import { fetchRoutineDetail, deleteRoutineStep } from '../services/api';
+import ModalDialog from './ModalDialog';
 
 export default function RoutineTimeline({ routineData: initialRoutineData, routineId, onGoToTracker, onGoToDelivery, onRoutineUpdated }) {
   const [routineData, setRoutineData] = useState(initialRoutineData);
   const [loading, setLoading] = useState(false);
   const [deletingStepId, setDeletingStepId] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '' });
 
   // Sync or reload routine detail to ensure timeline has latest tracker completions
   const effectiveRoutineId = routineId || initialRoutineData?.routine_id || initialRoutineData?.id;
@@ -26,19 +28,36 @@ export default function RoutineTimeline({ routineData: initialRoutineData, routi
     }
   };
 
-  const handleDeleteStep = async (stepId, productName) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${productName}" from your routine timeline and daily tracker?`);
-    if (!confirmed) return;
-
-    try {
-      setDeletingStepId(stepId);
-      await deleteRoutineStep(effectiveRoutineId, stepId);
-      await refreshTimelineData();
-    } catch (err) {
-      alert(`Could not delete step: ${err.message}`);
-    } finally {
-      setDeletingStepId(null);
-    }
+  const handleDeleteStep = (stepId, productName) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'confirm',
+      variant: 'danger',
+      title: 'Remove Product?',
+      message: `Are you sure you want to delete "${productName}" from your routine?`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setModalConfig({ isOpen: false, title: '', message: '' });
+        try {
+          setDeletingStepId(stepId);
+          await deleteRoutineStep(effectiveRoutineId, stepId);
+          await refreshTimelineData();
+        } catch (err) {
+          setModalConfig({
+            isOpen: true,
+            type: 'alert',
+            variant: 'danger',
+            title: 'Delete Failed',
+            message: `Could not delete step: ${err.message}`,
+            confirmText: 'Dismiss',
+            onConfirm: () => setModalConfig({ isOpen: false, title: '', message: '' }),
+          });
+        } finally {
+          setDeletingStepId(null);
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -319,6 +338,18 @@ export default function RoutineTimeline({ routineData: initialRoutineData, routi
           );
         })}
       </div>
+
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ isOpen: false, title: '', message: '' })}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        variant={modalConfig.variant}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+      />
     </div>
   );
 }

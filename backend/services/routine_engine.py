@@ -7,7 +7,74 @@ Calculates smart replenishment and delivery schedules based on bottle lifespan a
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta
 from products.models import Product
-from routines.models import Routine, RoutineStep, RoutineDeliveryItem
+from routines.models import Routine, RoutineStep, RoutineDeliveryItem, RoutineProgress
+
+def consolidate_user_active_routines(user=None, session_id=None) -> Optional[Routine]:
+    """
+    If a user has multiple active routines created from prior separate orders,
+    consolidates all steps and delivery items into the primary active routine.
+    This ensures that when a user places multiple orders, all order products
+    and replenishment items appear together in their Daily Tracker and Delivery Schedule.
+    """
+    if user and user.is_authenticated:
+        active_routines = list(Routine.objects.filter(user=user, status='active').order_by('created_at'))
+    elif session_id:
+        active_routines = list(Routine.objects.filter(session_id=session_id, user=None, status='active').order_by('created_at'))
+    else:
+        return None
+
+    if not active_routines:
+        return None
+
+    if len(active_routines) == 1:
+        return active_routines[0]
+
+    primary_routine = active_routines[0]
+    existing_product_ids = set(primary_routine.steps.values_list('product_id', flat=True))
+    max_order = max([s.order for s in primary_routine.steps.all()], default=0)
+
+    for secondary in active_routines[1:]:
+        for step in list(secondary.steps.select_related('product').all()):
+            if step.product_id not in existing_product_ids:
+                max_order += 1
+                step.routine = primary_routine
+                step.order = max_order
+                step.save()
+                existing_product_ids.add(step.product_id)
+            else:
+                primary_step = primary_routine.steps.filter(product_id=step.product_id).first()
+                if primary_step:
+                    for prog in step.progress_entries.all():
+                        RoutineProgress.objects.update_or_create(
+                            routine_step=primary_step,
+                            date=prog.date,
+                            session=prog.session,
+                            defaults={"completed": prog.completed, "notes": prog.notes}
+                        )
+                step.delete()
+
+        # Merge delivery items
+        for del_item in list(secondary.delivery_items.all()):
+            if not primary_routine.delivery_items.filter(product_id=del_item.product_id).exists():
+                del_item.routine = primary_routine
+                del_item.save()
+            else:
+                del_item.delete()
+
+        # Merge skin feedbacks
+        for fb in list(secondary.skin_feedbacks.all()):
+            if not primary_routine.skin_feedbacks.filter(date=fb.date).exists():
+                fb.routine = primary_routine
+                fb.save()
+            else:
+                fb.delete()
+
+        secondary.status = 'completed'
+        secondary.save()
+
+    generate_delivery_schedule(primary_routine)
+    return primary_routine
+
 
 def generate_progressive_routine(
     product_ids: List[int],
@@ -16,15 +83,101 @@ def generate_progressive_routine(
     session_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Generates a multi-stage progressive skincare routine.
-    Stage 1: Foundation (Cleanser, Barrier Moisturizer, Sunscreen) - Weeks 1-2
-    Stage 2: Gentle Hydration & Calming Actives - Week 3
-    Stage 3: Targeted Treatments & Strong Actives (Retinoids, Acids) - Week 4+
+    Generates or updates a multi-stage progressive skincare routine.
+    If the user/session already has an active routine from a previous order,
+    the newly ordered products are merged into their existing routine and scheduled
+    so that previous order details, progress, and replenishment dates are fully preserved!
     """
     products = list(Product.objects.filter(id__in=product_ids).prefetch_related('ingredients'))
     if not products:
         raise ValueError("At least one valid product is required to generate a routine.")
 
+    # 1. Consolidate any fragmented prior routines for this user/session
+    existing_routine = consolidate_user_active_routines(user=user, session_id=session_id)
+
+    if existing_routine:
+        # Augment existing active routine with products from this new order
+        routine = existing_routine
+        existing_steps = list(routine.steps.select_related('product').all())
+        existing_product_ids = {s.product_id for s in existing_steps}
+        max_order = max([s.order for s in existing_steps], default=0)
+
+        # Products from this order that aren't in the routine yet
+        new_products = [p for p in products if p.id not in existing_product_ids]
+
+        # Categorize new products into stages
+        for prod in new_products:
+            ing_categories = {i.category for i in prod.ingredients.all()}
+            if ('retinoid' in ing_categories or 'exfoliant' in ing_categories or prod.active_level == 'high' or prod.category == 'exfoliant'):
+                stage_num = 3
+                stage_name = "Stage 3: Concentrated Active Integration"
+                w_start = 4
+                w_end = 6
+                freq = "2_3_times_per_week"
+                tod = "evening"
+            elif prod.category in ['cleanser', 'moisturizer', 'sunscreen'] and prod.active_level == 'low':
+                stage_num = 1
+                stage_name = "Stage 1: Barrier Foundation"
+                w_start = 1
+                w_end = 2
+                freq = prod.usage_frequency
+                tod = prod.time_of_day
+            else:
+                stage_num = 2
+                stage_name = "Stage 2: Targeted Prep & Hydration"
+                w_start = 3
+                w_end = 3
+                freq = "daily" if prod.usage_frequency == "daily" else "every_other_day"
+                tod = prod.time_of_day
+
+            max_order += 1
+            RoutineStep.objects.create(
+                routine=routine,
+                product=prod,
+                stage_number=stage_num,
+                stage_name=stage_name,
+                week_start=w_start,
+                week_end=w_end,
+                frequency=freq,
+                time_of_day=tod,
+                order=max_order
+            )
+
+        # Products that were already in the routine (reorder / replenishment purchase)
+        reordered_products = [p for p in products if p.id in existing_product_ids]
+        for prod in reordered_products:
+            del_item = routine.delivery_items.filter(product=prod).first()
+            if del_item:
+                base_days = prod.typical_duration_days or 60
+                del_item.suggested_reorder_date = date.today() + timedelta(days=base_days)
+                del_item.status = 'scheduled'
+                del_item.active = True
+                del_item.quantity += 1
+                del_item.save()
+
+        # Update/ensure delivery schedule for all products on this routine
+        delivery_items = generate_delivery_schedule(routine)
+        roadmap = get_routine_staged_roadmap(routine)
+
+        return {
+            "routine_id": routine.id,
+            "name": routine.name,
+            "total_steps": routine.steps.count(),
+            "journey_summary": roadmap["journey_summary"],
+            "stages": roadmap["stages"],
+            "adaptive_guidance": get_routine_adaptive_guidance(routine),
+            "delivery_schedule": [
+                {
+                    "product_name": item.product.name,
+                    "suggested_reorder_date": item.suggested_reorder_date.isoformat(),
+                    "frequency_weeks": item.frequency_weeks,
+                    "reason": item.reason
+                }
+                for item in delivery_items
+            ]
+        }
+
+    # First order: Create initial routine
     routine = Routine.objects.create(
         name=routine_name,
         user=user if user and user.is_authenticated else None,

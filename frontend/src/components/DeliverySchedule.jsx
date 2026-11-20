@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRoutineDeliverySchedule, toggleDeliveryItemAutoReorder } from '../services/api';
 import { CalendarIcon, ShieldCheckIcon, SparklesIcon } from './Icons';
+import ModalDialog from './ModalDialog';
 import { formatRupees } from '@/lib/utils';
 
 export default function DeliverySchedule({ routineId }) {
@@ -8,6 +9,7 @@ export default function DeliverySchedule({ routineId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [togglingItems, setTogglingItems] = useState({});
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '' });
 
   const loadSchedule = async () => {
     if (!routineId) return;
@@ -43,7 +45,14 @@ export default function DeliverySchedule({ routineId }) {
         };
       });
     } catch (err) {
-      alert(`Failed to update auto-reorder for this item: ${err.message}`);
+      setModalConfig({
+        isOpen: true,
+        type: 'alert',
+        variant: 'danger',
+        title: 'Update Notice',
+        message: `Failed to update auto-reorder for this item: ${err.message}`,
+        confirmText: 'Dismiss',
+      });
     } finally {
       setTogglingItems((prev) => ({ ...prev, [itemId]: false }));
     }
@@ -212,6 +221,17 @@ export default function DeliverySchedule({ routineId }) {
           })}
         </div>
       </div>
+
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ isOpen: false, title: '', message: '' })}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type="alert"
+        variant="danger"
+        confirmText="Dismiss"
+        onConfirm={() => setModalConfig({ isOpen: false, title: '', message: '' })}
+      />
     </div>
   );
 }

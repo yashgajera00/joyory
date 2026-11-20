@@ -20,6 +20,7 @@ import {
   TrashIcon
 } from './Icons';
 import SkinFeedbackModal from './SkinFeedbackModal';
+import ModalDialog from './ModalDialog';
 
 const INDIAN_CITIES = [
   'Mumbai',
@@ -42,6 +43,51 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
   const [togglingReorder, setTogglingReorder] = useState(false);
   const [completingAll, setCompletingAll] = useState(false);
   const [deletingStepId, setDeletingStepId] = useState(null);
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'confirm',
+    variant: 'danger',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+    onConfirm: null,
+  });
+
+  const closeModal = () => {
+    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const showConfirm = ({ title, message, variant = 'danger', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm }) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'confirm',
+      variant,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      onConfirm: async () => {
+        closeModal();
+        if (onConfirm) await onConfirm();
+      },
+    });
+  };
+
+  const showAlert = ({ title, message, variant = 'info', confirmText = 'OK', onConfirm }) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'alert',
+      variant,
+      title,
+      message,
+      confirmText,
+      onConfirm: async () => {
+        closeModal();
+        if (onConfirm) await onConfirm();
+      },
+    });
+  };
 
   // Live Clock for accurate time-based wishing
   const [currentTime, setCurrentTime] = useState(() =>
@@ -170,35 +216,32 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
   }, [routineId, timeOfDay, selectedCity, selectedWeek, selectedDateOffset, userCoords]);
 
   // Handle Delete Step from Routine
-  const handleDeleteStep = async (stepId, productName) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${productName}" from your daily tracker?`);
-    if (!confirmed) return;
-
-    try {
-      setDeletingStepId(stepId);
-      await deleteRoutineStep(routineId, stepId);
-      await loadProgress();
-    } catch (err) {
-      alert(`Could not delete step: ${err.message}`);
-    } finally {
-      setDeletingStepId(null);
-    }
+  const handleDeleteStep = (stepId, productName) => {
+    showConfirm({
+      title: 'Remove Product?',
+      message: `Are you sure you want to remove "${productName}" from your daily tracker?`,
+      variant: 'danger',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          setDeletingStepId(stepId);
+          await deleteRoutineStep(routineId, stepId);
+          await loadProgress();
+        } catch (err) {
+          showAlert({
+            title: 'Delete Failed',
+            message: `Could not delete step: ${err.message}`,
+            variant: 'danger',
+          });
+        } finally {
+          setDeletingStepId(null);
+        }
+      },
+    });
   };
 
-  // Handle Mark Complete / Step Action
-  const handleToggleStep = async (stepId, currentStatus, suitability, session = 'morning') => {
-    // Once a task is completed, it cannot be unchecked for the day
-    if (currentStatus) {
-      return;
-    }
-
-    if (suitability === 'not_recommended') {
-      const proceed = window.confirm(
-        '⚠️ Weather Timing Alert:\nThis formula is flagged as NOT RECOMMENDED for this time/climate due to active photosensitivity or daytime UV.\n\nAre you sure you want to mark it as applied right now?'
-      );
-      if (!proceed) return;
-    }
-
+  const executeStepToggle = async (stepId, session) => {
     const key = `${session}-${stepId}`;
     setSavingStepId(key);
     try {
@@ -217,16 +260,45 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
       setIsFeedbackModalOpen(true);
 
       if (res.auto_reordered_now) {
-        alert(`🎉 Routine 100% Completed! Auto-reorder was triggered for your replenishments (Order: ${res.auto_reorder_order_id}).`);
+        showAlert({
+          title: 'Routine 100% Completed! 🎉',
+          message: `Automatic replenishment reorder was triggered for your routine formulas (Order: ${res.auto_reorder_order_id}).`,
+          variant: 'success',
+          confirmText: 'Awesome',
+        });
       }
     } catch (err) {
-      alert(`Error updating step: ${err.message}`);
+      showAlert({
+        title: 'Update Failed',
+        message: `Error updating step: ${err.message}`,
+        variant: 'danger',
+      });
     } finally {
       setSavingStepId(null);
     }
   };
 
+  // Handle Mark Complete / Step Action
+  const handleToggleStep = async (stepId, currentStatus, suitability, session = 'morning') => {
+    // Once a task is completed, it cannot be unchecked for the day
+    if (currentStatus) {
+      return;
+    }
 
+    if (suitability === 'not_recommended') {
+      showConfirm({
+        title: 'Weather Timing Advisory ⚠️',
+        message: 'This formula is flagged as NOT RECOMMENDED for this time/climate due to active photosensitivity or daytime UV exposure.\n\nAre you sure you want to mark it as applied right now?',
+        variant: 'warning',
+        confirmText: 'Apply Anyway',
+        cancelText: 'Wait for Later',
+        onConfirm: () => executeStepToggle(stepId, session),
+      });
+      return;
+    }
+
+    await executeStepToggle(stepId, session);
+  };
 
   // Handle 1-Click Daily Skin Feedback
   const handleSkinFeedback = async (feel) => {
@@ -240,7 +312,11 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
         await loadProgress();
       }
     } catch (err) {
-      alert(`Could not record feedback: ${err.message}`);
+      showAlert({
+        title: 'Feedback Notice',
+        message: `Could not record feedback: ${err.message}`,
+        variant: 'warning',
+      });
     } finally {
       setSubmittingFeedback(false);
     }
@@ -252,7 +328,11 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
       await toggleRoutineAutoReorder(routineId);
       await loadProgress();
     } catch (err) {
-      alert(`Failed to update setting: ${err.message}`);
+      showAlert({
+        title: 'Setting Error',
+        message: `Failed to update auto-reorder setting: ${err.message}`,
+        variant: 'danger',
+      });
     } finally {
       setTogglingReorder(false);
     }
@@ -264,10 +344,19 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
       const res = await completeAllRoutineSteps(routineId);
       await loadProgress();
       if (res.auto_reordered_now) {
-        alert(`🎉 All steps completed! Auto-reorder successfully dispatched (Order: ${res.auto_reorder_order_id}).`);
+        showAlert({
+          title: 'All Steps Completed! 🎉',
+          message: `Auto-reorder successfully dispatched (Order: ${res.auto_reorder_order_id}).`,
+          variant: 'success',
+          confirmText: 'Awesome',
+        });
       }
     } catch (err) {
-      alert(`Failed to complete steps: ${err.message}`);
+      showAlert({
+        title: 'Complete Failed',
+        message: `Failed to complete steps: ${err.message}`,
+        variant: 'danger',
+      });
     } finally {
       setCompletingAll(false);
     }
@@ -511,6 +600,20 @@ export default function RoutineTracker({ routineId, user, onGoToTimeline, onGoTo
           await submitDailySkinFeedback(routineId, feel, notes);
           await loadProgress();
         }}
+      />
+
+      {/* Custom Luxury Confirm & Alert Modal Dialog */}
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        variant={modalConfig.variant}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+        loading={modalConfig.loading}
       />
     </div>
   );
